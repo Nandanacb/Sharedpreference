@@ -60,11 +60,11 @@ void Additem(String item) {
       
         
           Expanded(
-            child: ListView.builder(itemCount: 5,itemBuilder: (context,index){
+            child: ListView.builder(itemCount:_items.length,itemBuilder: (context,index){
               return Container(
               height: 100,
               width: double.infinity,
-              child: Text("")
+              child: Text(_items[index])
                 
               );
             }),

@@ -14,7 +14,7 @@ String _name='';
 
 @override
 
-void initstate(){
+void initState(){
   super.initState();
   loadName();
 }

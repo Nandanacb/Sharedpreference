@@ -1,134 +1,170 @@
-import'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Todoexample extends StatefulWidget{
-  const  Todoexample({super.key});
-  @override
 
-   State<Todoexample> createState()=> _TodoexampleState();
+class NewtodoApp extends StatefulWidget {
+  const NewtodoApp({super.key});
+
+  @override
+  State<NewtodoApp> createState() => _NewtodoAppState();
 }
 
-class _TodoexampleState extends State<Todoexample>{
-
-   List<Color> colorList=[
-    Colors.amber,
-    Colors.red,
-    Colors.green,
+class _NewtodoAppState extends State<NewtodoApp> {
+   List<Map<String,dynamic>> _items =[];
+  Color _selectedColor=Colors.blue;
+  List<Color> _colorlist = [
+    Colors.blue,
+    Colors.pink,
     Colors.purple,
-
-
-   ];
-
-  List<String> _items =[];
+    Colors.orange,
+    Colors.green
+  ];
+  
 @override
 void initState(){
   super.initState();
-  loadItems();
+  _loadItems();
 }
-loadItems() async {
+_loadItems() async {
   SharedPreferences prefs= await SharedPreferences.getInstance();
-  setState(() {
-   _items=prefs.getStringList('items') ?? [];
-  });
+  List<String>? tasks=prefs.getStringList('items');
+   List<String>? colors=prefs.getStringList('colors');
+   if(tasks != null && colors != null){
+    setState(() {
+      _items=List.generate(tasks.length,(index){
+        return {
+          'task':tasks[index],
+          'color': Color(int.parse(colors[index]))
+        };
+      });
+    });
+   }
 }
-saveItems(List<String> items) async {
+
+  
+_saveItems() async {
   SharedPreferences prefs=await SharedPreferences.getInstance();
-  prefs.setStringList('items', _items);
+  List<String> tasks=
+  _items.map((item)=>item['task'] as String).toList();
+  List<String>colors =_items
+  .map((item)=>(item['color'] as Color).value.toString()).toList();
+
+  prefs.setStringList('items', tasks);
+  prefs.setStringList('colors', colors);
+
 }
 
-void Additem(String item) {
+void _additem(String task) {
+  if(task.isNotEmpty){
+    setState(() {
+      _items.add({'task':task, 'color':_selectedColor});
+    });
+  
+  _saveItems();
+
+}
+}
+
+void _removeItem(int index){
   setState(() {
-    _items.add(item);
+    _items.removeAt(index);
   });
-  saveItems( _items);
+  _saveItems();
+}
 
+void _promptItem(){
+  String newTask="";
+  showModalBottomSheet(context: context, builder: (BuildContext context){
+    return Container(
+      height: 500,
+      width: double.infinity,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [TextField(
+          decoration: InputDecoration(border: OutlineInputBorder()),
+          autofocus: true,
+          onChanged: (val){
+            newTask=val;
+          },
+        ),
+        SizedBox(height: 20,),
+        Text('pick a task color:'),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            separatorBuilder: (context,index){
+              return SizedBox(
+                height: 10,
+              );
+            },
+            
+      
+          scrollDirection: Axis.horizontal, itemCount:_colorlist.length, itemBuilder: (context,index){
+             return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedColor=_colorlist[index];
+                });
+              },
+              child: CircleAvatar(
+                radius: 15,
+                backgroundColor: _colorlist[index],
+              ),
+             );
+          },
+        ),
+        ),
+        TextButton( child: Text('Add'),onPressed:(){
+          if(newTask.isNotEmpty){
+            _additem(newTask);
+          Navigator.of(context).pop();
+          }
+        },),
+        ],
+      ),
+    );
+  },
+  );
 }
 
 
-
-
+  
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("ToDo Example"),
-      
-      ),
+      appBar: AppBar(title: Text("Todo Example")),
       body: Column(
-        
         children: [
-      
-        
           Expanded(
-            child: ListView.builder(itemCount:_items.length,itemBuilder: (context,index){
-              return Container(
-              height: 100,
-              width: double.infinity,
-              child: Text(_items[index])
+            child: ListView.builder(
+              itemCount: _items.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Container(
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(15),color: _items[index]['color'],),
+                    child: Row(
+                      children: [
+                        Text(_items[index]['task']),
+                        Spacer(),
+                        IconButton(onPressed: ()=>_removeItem(index), icon: Icon(Icons.delete)),
+                      ],
+                    ),
+                    ),
+                  );
                 
-              );
-            }),
-          )
+                
+              },
+            ),
+          ),
         
-      ]),
+        ]),
       floatingActionButton: FloatingActionButton(
-                        child: Icon(Icons.play_arrow_outlined),onPressed: (){
-                          showModalBottomSheet(
-                             context: context, builder:(BuildContext context){
-                            return Container(
-                              height: 450,
-                              width: double.infinity,
-                              color: Colors.white,
-                              child: Column(
-                                children: [
-                                  TextField(decoration: InputDecoration(border: OutlineInputBorder(),hintText: 'Enter a task'),),
-                                  SizedBox(height: 16,),
-                                 Text("choose any color:",style: TextStyle(fontSize: 17),),
-                                  
-                                  
-                                 Expanded(
-                                   child: ListView.separated(
-                                    
-                                    scrollDirection: Axis.horizontal,itemBuilder: (context, index){
-                                    return Container(
-                                      height: 50,
-                                      width: 80,
-                                      child: CircleAvatar(
-                                        radius: 15,
-                                        backgroundColor:colorList[index],
-                                      ),
-                                      
-                                    );
-                                   }, separatorBuilder:(context,index){
-                                    return SizedBox(
-                                      width: 10,
-                                    );
-                                   }, itemCount: 4),
-                                   
-                                 ),
-                                 SizedBox(height: 20,),
-                                 
-                         Padding(
-                           padding: const EdgeInsets.all(20),
-                           child: ElevatedButton(onPressed: (){}, child: Text("Add",style: TextStyle(fontSize: 25),)),
-                         ),
-              ]
-              )
-                             );
-                             });
-                        }
-                ),
-    );  
-
-
-
-
-
-
-
-
-     }
-
-                          
-      }
-        
+        child: Icon(Icons.add),
+        tooltip: 'Add Task',
+        onPressed: _promptItem,
+          
+      ),
+    );
+  }
+}
